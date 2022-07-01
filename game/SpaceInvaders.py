@@ -19,7 +19,7 @@ def getURL(filename):
 
 class SpaceInvaders():
 
-    NO_INVADERS = 3
+    NO_INVADERS = 1
      # Nombre d'aliens  
     def __init__(self, display : bool = False):
         # player
@@ -27,20 +27,14 @@ class SpaceInvaders():
         
         # nombre d'actions (left, right, fire, no_action)
         self.na = 4
+        self.alpha = 0.001
+        self.gamma = 1.
         self.Q = {}
-        self.states = list()
-        for dx in range(0, self.screen_width/self.alien_size):
-            for dy in range (0, self.screen_height/self.alien_size):
-                for i in range (0,1):
-                    if i == 0:
-                        state = [dx, dy, True]
-                        self.states.append(state)
-                    else:
-                        state = [dx, dy, False]
-                        self.states.append(state)
+           
 
-        for state in self.states:
-            self.Q[str(state)] = [0,0,0,0]       
+        """self.eps_profile = eps_profile
+        self.epsilon = self.eps_profile.initial """
+        self.epsilon = 2000
 
         #   pygame
         pygame.init()
@@ -61,6 +55,25 @@ class SpaceInvaders():
         self.scoreY = 5
         self.font = pygame.font.Font('freesansbold.ttf', 20)
         self.alien_size = 64
+        # Initialisation des états
+        self.states = list()
+        self.screenX = int(self.screen_width/self.alien_size)
+        self.screenY = int(self.screen_height/self.alien_size)
+        for dx in range(0, self.screenX):
+            for dy in range (0, self.screenY):
+                for d in [0,1]:
+                    for i in [0,1]:
+                        if i == 0:
+                            state = [dx, dy, d, 'rest']
+                            
+                            self.states.append(state)
+                        else:
+                            state = [dx, dy, d, 'fire']
+                            
+                            self.states.append(state)
+
+        for state in self.states:
+            self.Q[str(state)] = [0,0,0,0]
 
         # Game Over
         self.game_over_font = pygame.font.Font('freesansbold.ttf', 64)
@@ -95,15 +108,21 @@ class SpaceInvaders():
 
     def full_image(self):
         return pygame.surfarray.array3d(self.screen)
+    
+    def getCell(self, value, size):
+        return int(value/size)
 
     def get_state(self):
         """ A COMPLETER AVEC VOTRE ETAT
         Cette méthode doit renvoyer l'état du système comme vous aurez choisi de
         le représenter. Vous pouvez utiliser les accesseurs ci-dessus pour cela. 
         """
-        x_distance = (self.get_player_X()- self.get_indavers_X())/(self.screen_width/self.alien_size)
-        y_distance = (self.get_player_Y()- self.get_indavers_Y())/(self.screen_height/self.alien_size)
-        return [x_distance, y_distance, self.get_bullet_state()]
+        x_distance = self.getCell(self.get_player_X(), self.screen_width) - self.getCell(self.get_indavers_X()[0], self.screen_width)
+        y_distance = self.getCell(self.get_player_Y(), self.screen_height) - self.getCell(self.get_indavers_Y()[0], self.screen_height)
+        if x_distance < 0:
+            return  [abs(x_distance), y_distance, 0, self.get_bullet_state()]
+        else:
+            return [x_distance, y_distance, 1, self.get_bullet_state()]
         #return "L'état n'est pas implémenté (SpaceInvaders.get_state)"
     def learn( self, n_episodes, max_steps):
         n_steps = np.zeros(n_episodes) + max_steps
@@ -126,7 +145,7 @@ class SpaceInvaders():
 
                 state = next_state
             # Mets à jour la valeur du epsilon
-            self.epsilon = max(self.epsilon - self.eps_profile.dec_episode / (n_episodes - 1.), self.eps_profile.final)
+            #self.epsilon = max(self.epsilon - self.eps_profile.dec_episode / (n_episodes - 1.), self.eps_profile.final)
 
             # Sauvegarde et affiche les données d'apprentissage
             """if n_episodes >= 0:
@@ -134,35 +153,36 @@ class SpaceInvaders():
                 print("\r#> Ep. {}/{} Value {}".format(episode, n_episodes, self.Q[state][self.select_greedy_action(state)]), end =" ")
                 self.save_log(env, episode)"""
 
-    def updateQ(self, state : 'Tuple[int, int, bool]', action : int, reward : float, next_state : 'Tuple[int, int, bool]'):
+    def updateQ(self, state : 'Tuple[int, int, bool, str]', action : int, reward : float, next_state : 'Tuple[int, int, bool, str]'):
         action = int(action)
-        self.Q[state][action] = self.Q[state][action] * (1.0 - self.alpha) + self.alpha * (reward + self.gamma * np.max(self.Q[next_state]))
+        print(next_state)
+        self.Q[str(state)][action] = self.Q[str(state)][action] * (1.0 - self.alpha) + self.alpha * (reward + self.gamma * np.max(self.Q[str(next_state)]))
         #raise NotImplementedError("Q-learning NotImplementedError at Function updateQ.")
     
-    def select_action(self, state : 'Tuple[int, int]') -> int:
-        """À COMPLÉTER!
-        Cette méthode retourne l'action optimale.
+    def select_action(self, state : 'Tuple[int, int, bool, str]'):
+        """
+        Cette méthode retourne une action échantilloner selon le processus d'exploration (ici epsilon-greedy).
 
         :param state: L'état courant
-        :return: L'action optimale
-
-        doit retourner une exception si l'état n'est pas valide
+        :return: L'action 
         """
-        max_value = -np.infty
-        amax = 0
-        for a in range(self.maze.na):
-            q_s_a = 0.
-            somme = 0
-            for next_state in self.maze.getStates():
-                # Compléter ici votre équation de Bellman
-                # Note: On utilisera la fonction de récompense (self.maze.getReward) et la fonction de transition (self.maze.getDynamics).
-                somme = somme + self.maze.getDynamics(state, a, next_state) * self.V[next_state]
-                #raise NotImplementedError("Value Iteration NotImplementedError at Function select_action")
-            q_s_a = self.maze.getReward(state, a) + self.gamma * somme
-            if (q_s_a > max_value):
-                max_value = q_s_a
-                amax = a
-        return amax
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(self.na)      # random action
+        else:
+            return self.select_greedy_action(state)
+    
+
+    
+    def select_greedy_action(self, state : 'Tuple[int, int, bool, str]'):
+        """
+        Cette méthode retourne l'action gourmande.
+
+        :param state: L'état courant
+        :return: L'action gourmande
+        """
+        mx = np.max(self.Q[str(state)])
+        # greedy action with random tie break
+        return np.random.choice(np.where(self.Q[str(state)] == mx)[0])
     
     def reset(self):
         """Reset the game at the initial state.
@@ -200,7 +220,8 @@ class SpaceInvaders():
             self.render()
     
         return self.get_state()
-
+    
+    
     def step(self, action):
         """Execute une action et renvoir l'état suivant, la récompense perçue 
         et un booléen indiquant si la partie est terminée ou non.
