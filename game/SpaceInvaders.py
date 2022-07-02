@@ -4,6 +4,7 @@ import math
 from pygame import mixer
 import numpy as np
 import os
+from epsilon_profile import EpsilonProfile
 
 
 def getURL(filename):
@@ -19,22 +20,21 @@ def getURL(filename):
 
 class SpaceInvaders():
 
-    NO_INVADERS = 1
+    NO_INVADERS = 3
      # Nombre d'aliens  
-    def __init__(self, display : bool = False):
+    def __init__(self, eps_profile: EpsilonProfile, gamma: float, alpha: float, display : bool = False):
         # player
         self.display = display
         
         # nombre d'actions (left, right, fire, no_action)
         self.na = 4
-        self.alpha = 0.001
-        self.gamma = 1.
+        self.alpha = alpha
+        self.gamma = gamma
         self.Q = {}
            
 
-        """self.eps_profile = eps_profile
-        self.epsilon = self.eps_profile.initial """
-        self.epsilon = 2000
+        self.eps_profile = eps_profile
+        self.epsilon = self.eps_profile.initial
 
         #   pygame
         pygame.init()
@@ -112,13 +112,22 @@ class SpaceInvaders():
     def getCell(self, value, size):
         return int(value/size)
 
+    def invaderCible(self):
+        k_min = 0
+        for i in range(SpaceInvaders.NO_INVADERS):
+            if self.get_indavers_Y()[i] < self.get_indavers_Y()[k_min] and self.get_indavers_Y()[i] > 0:
+               k_min = i
+        print(self.get_indavers_Y()[k_min])
+        return k_min
+        
+
     def get_state(self):
         """ A COMPLETER AVEC VOTRE ETAT
         Cette méthode doit renvoyer l'état du système comme vous aurez choisi de
         le représenter. Vous pouvez utiliser les accesseurs ci-dessus pour cela. 
         """
-        x_distance = self.getCell(self.get_player_X(), self.screen_width) - self.getCell(self.get_indavers_X()[0], self.screen_width)
-        y_distance = self.getCell(self.get_player_Y(), self.screen_height) - self.getCell(self.get_indavers_Y()[0], self.screen_height)
+        x_distance = self.getCell(self.get_player_X(), self.screen_width) - self.getCell(self.get_indavers_X()[self.invaderCible()], self.screen_width)
+        y_distance = self.getCell(self.get_player_Y(), self.screen_height) - self.getCell(self.get_indavers_Y()[self.invaderCible()], self.screen_height)
         if x_distance < 0:
             return  [abs(x_distance), y_distance, 0, self.get_bullet_state()]
         else:
@@ -145,7 +154,7 @@ class SpaceInvaders():
 
                 state = next_state
             # Mets à jour la valeur du epsilon
-            #self.epsilon = max(self.epsilon - self.eps_profile.dec_episode / (n_episodes - 1.), self.eps_profile.final)
+            self.epsilon = max(self.epsilon - self.eps_profile.dec_episode / (n_episodes - 1.), self.eps_profile.final)
 
             # Sauvegarde et affiche les données d'apprentissage
             """if n_episodes >= 0:
@@ -155,7 +164,7 @@ class SpaceInvaders():
 
     def updateQ(self, state : 'Tuple[int, int, bool, str]', action : int, reward : float, next_state : 'Tuple[int, int, bool, str]'):
         action = int(action)
-        print(next_state)
+        print(self.gamma)
         self.Q[str(state)][action] = self.Q[str(state)][action] * (1.0 - self.alpha) + self.alpha * (reward + self.gamma * np.max(self.Q[str(next_state)]))
         #raise NotImplementedError("Q-learning NotImplementedError at Function updateQ.")
     
@@ -260,7 +269,6 @@ class SpaceInvaders():
     
         # movement of the invader
         for i in range(SpaceInvaders.NO_INVADERS):
-            
             if self.invader_Y[i] >= 450:
                 if abs(self.player_X-self.invader_X[i]) < 80:
                     for j in range(SpaceInvaders.NO_INVADERS):
