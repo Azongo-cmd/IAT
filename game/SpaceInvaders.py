@@ -6,6 +6,7 @@ from pygame import mixer
 import numpy as np
 import os
 from epsilon_profile import EpsilonProfile
+import pandas as pd
 
 
 def getURL(filename):
@@ -77,6 +78,11 @@ class SpaceInvaders():
         for state in self.states:
             self.Q[str(state)] = [0,0,0,0]
 
+         #Visualisation
+
+        self.qvalues = pd.DataFrame(data={'episode': [], 'value': []})
+        self.values = pd.DataFrame(data={'episode': [], 'value': []})
+
         # Game Over
         self.game_over_font = pygame.font.Font('freesansbold.ttf', 64)
 
@@ -131,6 +137,9 @@ class SpaceInvaders():
         y_distance = self.getCell(self.get_player_Y(), self.screen_height) - self.getCell(self.get_indavers_Y()[self.invaderCible()], self.screen_height)
         if x_distance < 0:
             return  [abs(x_distance), y_distance, 0, self.get_bullet_state()]
+        elif y_distance < 0:
+            exit(0)
+            #return [x_distance, abs(y_distance), 0, self.get_bullet_state()]
         else:
             return [x_distance, y_distance, 1, self.get_bullet_state()]
     
@@ -160,9 +169,10 @@ class SpaceInvaders():
             # Sauvegarde et affiche les données d'apprentissage
             if n_episodes >= 0:
                 print("\r#> Ep. {}/{} Value {}".format(episode, n_episodes, self.Q[str(state)][self.select_greedy_action(state)]), end =" ")
-            
+                self.save_log(state, episode)
 
-            #sleep(1)
+        self.values.to_csv('logV.csv')
+        self.qvalues.to_csv('logQ.csv')
 
     def updateQ(self, state : 'Tuple[int, int, bool, str]', action : int, reward : float, next_state : 'Tuple[int, int, bool, str]'):
         action = int(action)
@@ -334,3 +344,16 @@ class SpaceInvaders():
     def isCollision(self, x1, x2, y1, y2):
         distance = math.sqrt((math.pow(x1 - x2,2)) + (math.pow(y1 - y2,2)))
         return (distance <= 50)
+
+    def save_log(self, state, episode):
+        """Sauvegarde les données d'apprentissage.
+        :warning: Vous n'avez pas besoin de comprendre cette méthode
+        """
+        
+        # Construit la fonction de valeur d'état associée à Q
+        V = {}
+        for state in self.states:
+            val = self.Q[str(state)][self.select_action(state)]
+            V[str(state)] = val
+        self.qvalues = self.qvalues.append({'episode': episode, 'value': self.Q[str(state)][self.select_greedy_action(state)]}, ignore_index=True)
+        self.values = self.values.append({'episode': episode, 'value': V[str(state)]},ignore_index=True)
