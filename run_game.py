@@ -11,10 +11,10 @@ def main():
     #controller = RandomAgent(game.na)
     #state = game.reset()
  
-    n_episodes = 2000
-    max_steps = 50
-    alpha = 0.001
-    eps_profile = EpsilonProfile(1.0, 0.1)
+    n_episodes = 50
+    max_steps = 1000
+    alpha = 0.2
+    eps_profile = EpsilonProfile(1.0, 0.01)
     gamma = 1.
     game = SpaceInvaders(eps_profile, gamma, alpha, display=True)
     game.learn(n_episodes, max_steps)
