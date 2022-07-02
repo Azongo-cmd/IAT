@@ -5,6 +5,7 @@ from pygame import mixer
 import numpy as np
 import os
 from epsilon_profile import EpsilonProfile
+import pandas as pd
 
 
 def getURL(filename):
@@ -20,7 +21,7 @@ def getURL(filename):
 
 class SpaceInvaders():
 
-    NO_INVADERS = 3
+    NO_INVADERS = 5
      # Nombre d'aliens  
     def __init__(self, eps_profile: EpsilonProfile, gamma: float, alpha: float, display : bool = False):
         # player
@@ -75,6 +76,11 @@ class SpaceInvaders():
         for state in self.states:
             self.Q[str(state)] = [0,0,0,0]
 
+         #Visualisation
+
+        self.qvalues = pd.DataFrame(data={'episode': [], 'value': []})
+        self.values = pd.DataFrame(data={'episode': [], 'value': []})
+
         # Game Over
         self.game_over_font = pygame.font.Font('freesansbold.ttf', 64)
 
@@ -115,9 +121,9 @@ class SpaceInvaders():
     def invaderCible(self):
         k_min = 0
         for i in range(SpaceInvaders.NO_INVADERS):
-            if self.get_indavers_Y()[i] < self.get_indavers_Y()[k_min] and self.get_indavers_Y()[i] > 0:
+            if self.get_indavers_Y()[i] > self.get_indavers_Y()[k_min]:
                k_min = i
-        print(self.get_indavers_Y()[k_min])
+        #print(self.get_indavers_Y()[k_min])
         return k_min
         
 
@@ -130,6 +136,9 @@ class SpaceInvaders():
         y_distance = self.getCell(self.get_player_Y(), self.screen_height) - self.getCell(self.get_indavers_Y()[self.invaderCible()], self.screen_height)
         if x_distance < 0:
             return  [abs(x_distance), y_distance, 0, self.get_bullet_state()]
+        elif y_distance < 0:
+            exit(0)
+            #return [x_distance, abs(y_distance), 0, self.get_bullet_state()]
         else:
             return [x_distance, y_distance, 1, self.get_bullet_state()]
         #return "L'état n'est pas implémenté (SpaceInvaders.get_state)"
@@ -157,14 +166,15 @@ class SpaceInvaders():
             self.epsilon = max(self.epsilon - self.eps_profile.dec_episode / (n_episodes - 1.), self.eps_profile.final)
 
             # Sauvegarde et affiche les données d'apprentissage
-            """if n_episodes >= 0:
-                state = env.reset_using_existing_maze()
-                print("\r#> Ep. {}/{} Value {}".format(episode, n_episodes, self.Q[state][self.select_greedy_action(state)]), end =" ")
-                self.save_log(env, episode)"""
+            if n_episodes >= 0:
+                print("\r#> Ep. {}/{} Value {}".format(episode, n_episodes, self.Q[str(state)][self.select_greedy_action(state)]), end =" ")
+                self.save_log(state, episode)
+
+        self.values.to_csv('logV.csv')
+        self.qvalues.to_csv('logQ.csv')
 
     def updateQ(self, state : 'Tuple[int, int, bool, str]', action : int, reward : float, next_state : 'Tuple[int, int, bool, str]'):
         action = int(action)
-        print(self.gamma)
         self.Q[str(state)][action] = self.Q[str(state)][action] * (1.0 - self.alpha) + self.alpha * (reward + self.gamma * np.max(self.Q[str(next_state)]))
         #raise NotImplementedError("Q-learning NotImplementedError at Function updateQ.")
     
@@ -332,3 +342,16 @@ class SpaceInvaders():
     def isCollision(self, x1, x2, y1, y2):
         distance = math.sqrt((math.pow(x1 - x2,2)) + (math.pow(y1 - y2,2)))
         return (distance <= 50)
+
+    def save_log(self, state, episode):
+        """Sauvegarde les données d'apprentissage.
+        :warning: Vous n'avez pas besoin de comprendre cette méthode
+        """
+        
+        # Construit la fonction de valeur d'état associée à Q
+        V = {}
+        for state in self.states:
+            val = self.Q[str(state)][self.select_action(state)]
+            V[str(state)] = val
+        self.qvalues = self.qvalues.append({'episode': episode, 'value': self.Q[str(state)][self.select_greedy_action(state)]}, ignore_index=True)
+        self.values = self.values.append({'episode': episode, 'value': V[str(state)]},ignore_index=True)
