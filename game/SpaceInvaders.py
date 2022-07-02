@@ -61,7 +61,7 @@ class SpaceInvaders():
         self.screenX = int(self.screen_width/self.alien_size)
         self.screenY = int(self.screen_height/self.alien_size)
         for dx in range(0, self.screenX):
-            for dy in range (0, self.screenY):
+            for dy in range (-self.screenY, self.screenY):
                 for d in [0,1]:
                     for i in [0,1]:
                         if i == 0:
@@ -134,20 +134,20 @@ class SpaceInvaders():
         """
         x_distance = self.getCell(self.get_player_X(), self.screen_width) - self.getCell(self.get_indavers_X()[self.invaderCible()], self.screen_width)
         y_distance = self.getCell(self.get_player_Y(), self.screen_height) - self.getCell(self.get_indavers_Y()[self.invaderCible()], self.screen_height)
-        if x_distance < 0:
-            return  [abs(x_distance), y_distance, 0, self.get_bullet_state()]
-        elif y_distance < 0:
-            exit(0)
-            #return [x_distance, abs(y_distance), 0, self.get_bullet_state()]
+        if y_distance >= 0:
+            if x_distance < 0:
+                return  [abs(x_distance), y_distance, 0, self.get_bullet_state()]
+            else:
+                return [x_distance, y_distance, 1, self.get_bullet_state()]
         else:
-            return [x_distance, y_distance, 1, self.get_bullet_state()]
+            exit(0)
         #return "L'état n'est pas implémenté (SpaceInvaders.get_state)"
     def learn( self, n_episodes, max_steps):
         n_steps = np.zeros(n_episodes) + max_steps
         # Execute N episodes 
         for episode in range(n_episodes):
             # Reinitialise l'environnement
-            state = self.get_state()
+            state = self.reset()
             # Execute K steps 
             for step in range(max_steps):
                 # Selectionne une action 
@@ -156,7 +156,6 @@ class SpaceInvaders():
                 next_state, reward, terminal = self.step(action)
                 # Mets à jour la fonction de valeur Q
                 self.updateQ(state, action, reward, next_state)
-                
                 if terminal:
                     n_steps[episode] = step + 1  
                     break
