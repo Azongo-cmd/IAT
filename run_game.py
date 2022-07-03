@@ -4,6 +4,7 @@ from game.SpaceInvaders import SpaceInvaders
 from controller.keyboard import KeyboardController
 from controller.random_agent import RandomAgent
 from epsilon_profile import EpsilonProfile
+import logAnalysis
 
 def main():
 
@@ -24,4 +25,9 @@ def main():
         sleep(0.0001)"""
 
 if __name__ == '__main__' :
-    main()
+    #main()
+    Qlog = logAnalysis.logAnalysis("logQ.csv")
+    Vlog = logAnalysis.logAnalysis("logV.csv")
+    Qlog.printCurves()
+    Vlog.printCurves()
+
