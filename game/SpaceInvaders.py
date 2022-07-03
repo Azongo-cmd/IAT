@@ -137,9 +137,6 @@ class SpaceInvaders():
         y_distance = self.getCell(self.get_player_Y(), self.screen_height) - self.getCell(self.get_indavers_Y()[self.invaderCible()], self.screen_height)
         if x_distance < 0:
             return  [abs(x_distance), y_distance, 0, self.get_bullet_state()]
-        elif y_distance < 0:
-            exit(0)
-            #return [x_distance, abs(y_distance), 0, self.get_bullet_state()]
         else:
             return [x_distance, y_distance, 1, self.get_bullet_state()]
     
@@ -168,8 +165,9 @@ class SpaceInvaders():
             self.epsilon = max(self.epsilon - self.eps_profile.dec_episode / (n_episodes - 1.), self.eps_profile.final)
             # Sauvegarde et affiche les données d'apprentissage
             if n_episodes >= 0:
+                state = self.reset()
                 print("\r#> Ep. {}/{} Value {}".format(episode, n_episodes, self.Q[str(state)][self.select_greedy_action(state)]), end =" ")
-                self.save_log(state, episode)
+                self.save_log(episode)
 
         self.values.to_csv('logV.csv')
         self.qvalues.to_csv('logQ.csv')
@@ -284,8 +282,8 @@ class SpaceInvaders():
                 if abs(self.player_X-self.invader_X[i]) < 80:
                     print('yes')
                     is_done = True
-                    """for j in range(SpaceInvaders.NO_INVADERS):
-                        self.invader_Y[j] = 2000"""
+                    for j in range(SpaceInvaders.NO_INVADERS):
+                        self.invader_Y[j] = 2000
                     break
                 
             if self.invader_X[i] >= 735 or self.invader_X[i] <= 0:
@@ -345,7 +343,7 @@ class SpaceInvaders():
         distance = math.sqrt((math.pow(x1 - x2,2)) + (math.pow(y1 - y2,2)))
         return (distance <= 50)
 
-    def save_log(self, state, episode):
+    def save_log(self, episode):
         """Sauvegarde les données d'apprentissage.
         :warning: Vous n'avez pas besoin de comprendre cette méthode
         """
@@ -355,5 +353,7 @@ class SpaceInvaders():
         for state in self.states:
             val = self.Q[str(state)][self.select_action(state)]
             V[str(state)] = val
+        
+        state = self.reset()
         self.qvalues = self.qvalues.append({'episode': episode, 'value': self.Q[str(state)][self.select_greedy_action(state)]}, ignore_index=True)
         self.values = self.values.append({'episode': episode, 'value': V[str(state)]},ignore_index=True)
