@@ -11,8 +11,8 @@ def main():
     #controller = RandomAgent(game.na)
     #state = game.reset()
  
-    n_episodes = 200
-    max_steps = 1000
+    n_episodes = 50
+    max_steps = 10000
     alpha = 0.1
     eps_profile = EpsilonProfile(1.0, 0.01)
     gamma = 1.
