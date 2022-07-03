@@ -279,7 +279,7 @@ class SpaceInvaders():
         # movement of the invader
         for i in range(SpaceInvaders.NO_INVADERS):
             if self.invader_Y[i] >= 450:
-                if abs(self.player_X-self.invader_X[i]) < 80:
+                if abs(self.player_X-self.invader_X[i]) < 80 or (self.player_X-self.invader_X[i]) < 0:
                     print('yes')
                     is_done = True
                     for j in range(SpaceInvaders.NO_INVADERS):
