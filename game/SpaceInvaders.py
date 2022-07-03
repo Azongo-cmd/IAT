@@ -118,7 +118,10 @@ class SpaceInvaders():
         return pygame.surfarray.array3d(self.screen)
     
     def getCell(self, value, size):
-        return int(value/size)
+        if (value/size) % 1 < 0.5:
+            return int(value/size)
+        else:
+            return int(value/size) + 1
 
     def invaderCible(self):
         k_max = 0
@@ -280,7 +283,6 @@ class SpaceInvaders():
         for i in range(SpaceInvaders.NO_INVADERS):
             if self.invader_Y[i] >= 450:
                 if abs(self.player_X-self.invader_X[i]) < 80 or (self.player_X-self.invader_X[i]) < 0:
-                    print('yes')
                     is_done = True
                     for j in range(SpaceInvaders.NO_INVADERS):
                         self.invader_Y[j] = 2000
