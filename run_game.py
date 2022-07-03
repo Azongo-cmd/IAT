@@ -4,6 +4,7 @@ from game.SpaceInvaders import SpaceInvaders
 from controller.keyboard import KeyboardController
 from controller.random_agent import RandomAgent
 from epsilon_profile import EpsilonProfile
+import logAnalysis
 
 def main():
 
@@ -14,7 +15,7 @@ def main():
     n_episodes = 50
     max_steps = 1000
     alpha = 0.2
-    eps_profile = EpsilonProfile(1.0, 0.01)
+    eps_profile = EpsilonProfile(1.0, 2)
     gamma = 1.
     game = SpaceInvaders(eps_profile, gamma, alpha, display=True)
     game.learn(n_episodes, max_steps)
@@ -24,4 +25,9 @@ def main():
         sleep(0.0001)"""
 
 if __name__ == '__main__' :
-    main()
+    #main()
+    Qlog = logAnalysis.logAnalysis("logQ.csv")
+    Vlog = logAnalysis.logAnalysis("logV.csv")
+    Qlog.printCurves()
+    Vlog.printCurves()
+
